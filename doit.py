@@ -13,7 +13,7 @@ def signal_handler(signal, frame):
 
 signal.signal(signal.SIGINT, signal_handler)
 
-sentinel = Sentinel([('localhost', 26379), ('192.168.1.112', 26379)], socket_timeout=0.1)
+sentinel = Sentinel([('localhost', 26379), ('192.168.1.112', 26379)], socket_timeout=0.5)
 master = sentinel.master_for('mypod', socket_timeout=0.1)
 slave = sentinel.slave_for('mypod', socket_timeout=0.1)
 #pid = os.getpid() #print("%d:P " % pid, end="")
