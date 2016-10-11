@@ -33,6 +33,8 @@ while True:
 		read = slave.get("foo")
 		print(datetime.now().strftime('%d %b %H:%M:%S.%f')[:-3], end="")
 		print(" >>> wrote %d to master %s, read %d from slave %s" % (write, master_str, read, slave_str), flush=True)
+	except SystemExit:
+		sys.exit(0)
 	except:
 		e = sys.exc_info()[0]
 		print(">>>>>>>>>>>>>>>>>> ERROR %s" % e, flush=True)
