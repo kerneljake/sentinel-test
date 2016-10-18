@@ -7,24 +7,44 @@ from datetime import datetime
 import signal
 import sys
 import os
+import getopt
+
+MYPOD='mymaster'
+sentinel_list = [("localhost", 26379)]
 
 def signal_handler(signal, frame):
 	sys.exit(0)
-
 signal.signal(signal.SIGINT, signal_handler)
 
-sentinel = Sentinel([('localhost', 26379), ('192.168.1.112', 26379)], socket_timeout=0.5)
-master = sentinel.master_for('mypod', socket_timeout=0.1)
-slave = sentinel.slave_for('mypod', socket_timeout=0.1)
-#pid = os.getpid() #print("%d:P " % pid, end="")
-#master.set("foo", 0)
+try:
+	opts, args = getopt.getopt(sys.argv[1:], "p:s:")
+except getopt.GetoptError:
+	print("USAGE: " + sys.argv[0] + " [-p podname] [-s sentinels,comma:26379,separated]")
+	sys.exit(2)
+for opt, arg in opts:
+	if opt in ("-p"):
+		MYPOD = arg
+	elif opt in ("-s"):
+		sentinel_list = []
+		for hostname_port in arg.split(","):
+			try:
+				sentinel, port = hostname_port.split(":")
+			except ValueError:
+				sentinel = hostname_port
+				port = 26379
+			sentinel_list.append((sentinel, int(port)))
+
+print("sentinel list is " + str(sentinel_list))
+sentinel = Sentinel(sentinel_list, socket_timeout=0.5)
+master = sentinel.master_for(MYPOD, socket_timeout=0.1)
+slave = sentinel.slave_for(MYPOD, socket_timeout=0.1)
 slave.set_response_callback('GET', int)
 
 while True:
 	try:
-		master_tuple = sentinel.discover_master('mypod')
+		master_tuple = sentinel.discover_master(MYPOD)
 		master_str = "%s:%d" % (master_tuple[0], master_tuple[1])
-		slave_list = sentinel.discover_slaves('mypod')
+		slave_list = sentinel.discover_slaves(MYPOD)
 		if len(slave_list) > 0:
 			slave_str = "%s:%d" % (slave_list[0][0], slave_list[0][1])
 		else:
@@ -38,6 +58,5 @@ while True:
 	except:
 		e = sys.exc_info()[0]
 		print(">>>>>>>>>>>>>>>>>> ERROR %s" % e, flush=True)
-		#sys.exit(0)
 
 	time.sleep(1)
